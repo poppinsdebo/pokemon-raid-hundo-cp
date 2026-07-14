@@ -77,39 +77,48 @@ Raw data URL:
 https://raw.githubusercontent.com/poppinsdebo/pokemon-raid-hundo-cp/main/data/hundo_cp.json
 ```
 
-Create a new shortcut in the Shortcuts app with these actions, in order:
+Create a new shortcut in the Shortcuts app with these actions, in order.
+The **Get Dictionary Value** action reads as a sentence: **"Get [Value] for
+[Key] in [Dictionary]."** Where a step's result needs to be referenced by
+several later steps, add a **Set Variable** action right after it and give
+it an explicit name — that's how you tell its output apart later, since
+not every Shortcuts version lets you rename a magic variable inline.
 
 1. **Text** — leave the field empty, then long-press it and choose
    **Ask Each Time**. This is the parameter Siri will fill with the
    dictated species name.
 2. **Change Case** — Input: the Text from step 1. Case: **lowercase**.
-3. **Replace Text** — turn on **Regular Expression**. Find `[^a-z0-9]`,
-   Replace with nothing. Input: output of step 2. (Strips spaces,
-   apostrophes, hyphens — mirrors the `lookup` table's normalization.)
+3. **Replace Text** — tap the chevron/"Show More" at the bottom of the
+   action card to reveal **Regular Expression**, and turn it on. Find
+   `[^a-z0-9]`, Replace with nothing. Input: output of step 2. (Strips
+   spaces, apostrophes, hyphens — mirrors the `lookup` table's
+   normalization.) → **Set Variable**, name it `NormalizedName`.
 4. **Get Contents of URL** — URL: the raw data URL above, Method: GET.
-5. **Get Dictionary Value** — Get Value for key `lookup`, Dictionary: the
-   contents from step 4 (Shortcuts will auto-insert a "Get Dictionary from
-   Input" action for you — accept it).
-6. **Get Dictionary Value** — Get Value for key: the normalized text from
-   step 3, Dictionary: the `lookup` dictionary from step 5. This returns the
-   canonical species key (e.g. `RAICHU_ALOLA`), or nothing if not found.
-7. **If** — Input: output of step 6, Condition: **has any value**.
+5. **Get Value for** `lookup` **in** *(the contents from step 4 — Shortcuts
+   will auto-insert a "Get Dictionary from Input" action first; accept
+   it)* → **Set Variable**, name it `LookupDict`.
+6. **Get Value for** `NormalizedName` **in** `LookupDict`. This returns the
+   canonical species key (e.g. `RAICHU_ALOLA`), or nothing if not found →
+   **Set Variable**, name it `SpeciesKey`.
+7. **If** — Input: `SpeciesKey`, Condition: **has any value**.
    - **Otherwise**: **Speak Text** "I couldn't find a hundo CP for that
      Pokemon." then **Stop Shortcut**.
 8. Inside the **If** (true) branch:
-   - **Get Dictionary Value** — key `pokemon`, Dictionary: contents from
-     step 4.
-   - **Get Dictionary Value** — key: the canonical key from step 6,
-     Dictionary: the `pokemon` dict just above. This is the
-     `{base_stats, hundo_cp}` entry.
-   - **Get Dictionary Value** — key `hundo_cp`, Dictionary: the entry above.
-   - **Get Dictionary Value** — key `level20`, Dictionary: the `hundo_cp`
-     dict above. Rename this variable **Regular**.
-   - **Get Dictionary Value** — key `level25`, same dict. Rename **Boosted**.
-   - **Replace Text** on the canonical key (step 6): Find `_`, Replace with
-     a space, then **Change Case** → **Capitalize Every Word**, to build a
-     clean display name (`RAICHU_ALOLA` → `Raichu Alola`).
-   - **Speak Text**: `For [Display Name], Regular: [Regular] CP and Weather
+   - **Get Value for** `pokemon` **in** *(contents from step 4)* →
+     **Set Variable**, name it `PokemonDict`.
+   - **Get Value for** `SpeciesKey` **in** `PokemonDict`. This is the
+     `{base_stats, hundo_cp}` entry → **Set Variable**, name it `Entry`.
+   - **Get Value for** `hundo_cp` **in** `Entry` → **Set Variable**, name
+     it `HundoCP`.
+   - **Get Value for** `level20` **in** `HundoCP` → **Set Variable**, name
+     it `Regular`.
+   - **Get Value for** `level25` **in** `HundoCP` → **Set Variable**, name
+     it `Boosted`.
+   - **Replace Text** — Find `_`, Replace with a space (no regex needed),
+     Input: `SpeciesKey` → **Set Variable**, name it `SpacedName`.
+   - **Change Case** — Capitalize Every Word, Input: `SpacedName` →
+     **Set Variable**, name it `DisplayName`.
+   - **Speak Text**: `For [DisplayName], Regular: [Regular] CP and Weather
      Boosted: [Boosted] CP.`
 
 Then, in Shortcut Details (the ⓘ button), turn on **Use with Ask Siri**,
