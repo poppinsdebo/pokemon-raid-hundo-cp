@@ -54,6 +54,23 @@ commits weekly regardless of whether the underlying Pokemon data changed.
 Goal: say "Hey Siri, what's the hundo of Tyranitar" and hear "For Tyranitar,
 Regular: 2191 CP and Weather Boosted: 2739 CP." One shortcut, no server.
 
+### Option A: import the prebuilt shortcut
+
+[`shortcuts/Hundo Lookup.shortcut`](shortcuts/Hundo%20Lookup.shortcut) is a
+hand-assembled, **untested** starting point — Ask for Input → normalize →
+fetch → look up → speak, matching Option B below minus the "not found"
+guard. Transfer it to your phone (AirDrop, iCloud Drive, etc.), open it from
+the Files app, and if prompted, enable *Settings → Shortcuts → Allow
+Untrusted Shortcuts* first. If any action shows a red "missing variable"
+indicator on import, tap it and reconnect using Option B as the reference
+for what that field should point to.
+
+<!-- TODO once confirmed working on-device: replace this note with exact
+     install steps (transfer method, prompts you'll see, anything you had
+     to fix). -->
+
+### Option B: build it by hand
+
 Raw data URL:
 
 ```
