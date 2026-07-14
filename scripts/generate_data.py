@@ -7,12 +7,69 @@ also contains the CP multiplier (CPM) table used in the CP formula.
 """
 import json
 import math
+import re
 import urllib.request
 from datetime import datetime, timezone
 
 GAME_MASTER_URL = "https://raw.githubusercontent.com/PokeMiners/game_masters/master/latest/latest.json"
 RAID_CATCH_LEVELS = {"level20": 20, "level25": 25}
 OUTPUT_PATH = "data/hundo_cp.json"
+
+# Regional-form suffixes that people commonly say as a leading adjective
+# ("Alolan Raichu") rather than trailing ("Raichu Alola"). Maps the
+# GAME_MASTER suffix to the spoken adjective.
+REGIONAL_ADJECTIVES = {
+    "ALOLA": "ALOLAN",
+    "GALARIAN": "GALARIAN",
+    "HISUIAN": "HISUIAN",
+    "PALDEA": "PALDEAN",
+}
+
+# Extra spoken phrases for names Siri dictation tends to mangle (punctuation,
+# split compound words, "Jr."/"Z" read as separate words, etc.).
+SPECIAL_ALIASES = {
+    "HO_OH": ["ho oh", "hooh"],
+    "MIME_JR": ["mime jr", "mime junior"],
+    "MR_MIME": ["mr mime", "mister mime"],
+    "MR_MIME_GALARIAN": ["galarian mr mime", "galarian mister mime"],
+    "MR_RIME": ["mr rime", "mister rime"],
+    "JANGMO_O": ["jangmo o", "jangmoo"],
+    "HAKAMO_O": ["hakamo o", "hakamoo"],
+    "KOMMO_O": ["kommo o", "kommoo"],
+    "PORYGON_Z": ["porygon z"],
+    "TYPE_NULL": ["type null"],
+    "NIDORAN_FEMALE": ["nidoran female"],
+    "NIDORAN_MALE": ["nidoran male"],
+    "FARFETCHD": ["farfetchd", "farfetch d"],
+    "FARFETCHD_GALARIAN": ["galarian farfetchd", "galarian farfetch d"],
+    "SIRFETCHD": ["sirfetchd", "sirfetch d"],
+}
+
+
+def normalize(text):
+    """Lowercase, alphanumeric-only, no spaces — matches how the Shortcut
+    normalizes whatever Siri transcribes."""
+    return re.sub(r"[^a-z0-9]", "", text.lower())
+
+
+def build_aliases(key):
+    """All spoken-phrase keys (already normalize()d) that should resolve to
+    this pokemon_out key."""
+    parts = key.split("_")
+    aliases = {normalize(" ".join(parts))}
+
+    if len(parts) >= 2:
+        suffix = parts[-1]
+        species_parts = parts[:-1]
+        if suffix in REGIONAL_ADJECTIVES:
+            adjective = REGIONAL_ADJECTIVES[suffix]
+            aliases.add(normalize(adjective + " " + " ".join(species_parts)))
+            aliases.add(normalize(suffix + " " + " ".join(species_parts)))
+
+    for phrase in SPECIAL_ALIASES.get(key, []):
+        aliases.add(normalize(phrase))
+
+    return aliases
 
 
 def fetch_game_master():
@@ -87,12 +144,18 @@ def build_dataset(game_master):
                 "hundo_cp": cp_by_level,
             }
 
+    lookup = {}
+    for key in pokemon_out:
+        for alias in build_aliases(key):
+            lookup[alias] = key
+
     return {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "source": GAME_MASTER_URL,
         "iv": {"attack": 15, "defense": 15, "stamina": 15},
         "catch_levels": RAID_CATCH_LEVELS,
         "pokemon": dict(sorted(pokemon_out.items())),
+        "lookup": dict(sorted(lookup.items())),
     }
 
 
