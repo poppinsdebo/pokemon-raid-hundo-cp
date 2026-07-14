@@ -43,7 +43,7 @@ and commits it if changed.
 Fetch the raw file and look up a dictionary key:
 
 ```
-https://raw.githubusercontent.com/<your-username>/pokemon-raid-hundo-cp/main/data/hundo_cp.json
+https://raw.githubusercontent.com/poppinsdebo/pokemon-raid-hundo-cp/main/data/hundo_cp.json
 ```
 
 In Shortcuts: **Get Contents of URL** → **Get Dictionary Value** for `pokemon`
